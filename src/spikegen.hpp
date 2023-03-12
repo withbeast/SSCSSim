@@ -39,6 +39,23 @@ public:
         }
         return data;
     }
+    std::vector<std::vector<bool>> mnistGenPoisson(int steps,std::vector<int>_image){
+        int n=_image.size();
+        std::vector<real> data_init(n);
+        std::vector<std::vector<bool>> data(steps,std::vector<bool>(n));
+        for(int i=0;i<n;i++)
+            data_init[i]=(float)_image[i]/255.0f;
+        for(int i=0;i<steps;i++){
+            for(int j=0;j<n;j++){
+                if(random()<data_init[j]){
+                    data[i][j]=true;
+                }else{
+                    data[i][j]=false;
+                }
+            }
+        }
+        return data;
+    }
 };
 
 

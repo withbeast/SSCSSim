@@ -40,7 +40,7 @@ def plot_cur_mem_spk(cur, mem, spk, thr_line=False, vline=False, title=False, yl
     ax[2].set_ylabel("Output spikes")
     # ax[2].yticks([])
 
-    plt.show()
+    plt.savefig("fig.png")
 
 plot_cur_mem_spk(read_text("i.txt"),read_text("u.txt"),read_text("o.txt"))
 # T = 0.2

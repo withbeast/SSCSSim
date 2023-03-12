@@ -25,13 +25,13 @@ public:
     InputBuffer* inputs;
     std::vector<real> output;
     real dt;
-    void (*monitor)(int,real,real,real);
+    void (*monitor)(int,int,real,real,real);
     void (*feeder)(int, InputBuffer&);
 
     Simulator(Network* _net,real _dt){
         net=_net;
         dt=_dt;
-        monitor=[](int id,real u,real i,real o){};
+        monitor=[](int step,int id,real u,real i,real o){};
         feeder=[](int step, InputBuffer& buffer){};
         inputs=new InputBuffer(net->source.size());
     }
@@ -45,7 +45,7 @@ public:
     void setFeeder(void (*_feeder)(int,InputBuffer&)){
         feeder=_feeder;
     }
-    void setMonitor(void (*_monitor)(int,real,real,real)){
+    void setMonitor(void (*_monitor)(int,int,real,real,real)){
         monitor=_monitor;
     }
     void simulate(real time) {
@@ -70,7 +70,7 @@ public:
         //仿真神经元
         for (auto & neuron : net->neurons) {
             LIF(neuron->v, neuron->in, neuron->out, dt);
-            monitor(neuron->id,neuron->v,neuron->in,neuron->out);
+            monitor(step,neuron->id,neuron->v,neuron->in,neuron->out);
             neuron->in=0;
         }
         //仿真突触
@@ -81,7 +81,7 @@ public:
             real o=synapse->spikes.push(i);
             net->neurons[tar]->in+=o;
         }
-        std::cout<<net->neurons[4]->in<<std::endl;
+        // std::cout<<net->neurons[4]->in<<std::endl;
     }
 
 };
