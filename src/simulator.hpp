@@ -8,83 +8,108 @@
 #include "macro.h"
 #include "network.hpp"
 
-const real R = 5.1;
-const real C = 5e-3;
-const real thresh = 0.5;
 
 
-void LIF(real& U,const real& I,real& out,real step){
-    real tau = R * C;
-    out=(U>thresh);
-    U = U + (step / tau) * (I * R - U) - out*thresh;
-}
-
-class Simulator {
+class Simulator
+{
 public:
     Network *net;
-    InputBuffer* inputs;
     std::vector<real> output;
     real dt;
-    void (*monitor)(int,int,real,real,real);
-    void (*feeder)(int, InputBuffer&);
+    void (*monitorn)(int, Neuron&);
+    void (*monitors)(int,Synapse&);
+    void (*monitorp)(int,int,std::vector<Neuron*>);
 
-    Simulator(Network* _net,real _dt){
-        net=_net;
-        dt=_dt;
-        monitor=[](int step,int id,real u,real i,real o){};
-        feeder=[](int step, InputBuffer& buffer){};
-        inputs=new InputBuffer(net->source.size());
+    Simulator(Network *_net)
+    {
+        net = _net;
+        dt=Config::STEP;
+        // 初始化突触脉冲缓冲池
+        for (auto &synapse : net->synapses)
+        {
+            int size = std::lrint(synapse->delay / dt);
+            synapse->spikes.initialize(size, 0);
+        }
+        
+        monitorn = [](int clock, Neuron&n) {};
+        monitors = [](int clock,Synapse&s) {};
+        monitorp = [](int clock,int pop,std::vector<Neuron*> ns){};
     }
-    ~Simulator(){
-        delete inputs;
+    ~Simulator()
+    {
         output.clear();
     }
-    void setData(std::vector<InputBuffer> data){
-
-    }
-    void setFeeder(void (*_feeder)(int,InputBuffer&)){
-        feeder=_feeder;
-    }
-    void setMonitor(void (*_monitor)(int,int,real,real,real)){
-        monitor=_monitor;
-    }
-    void simulate(real time) {
-        //初始化突触脉冲缓冲池
-        for(auto & synapse : net->synapses){
-            int size=std::lrint(synapse->delay/dt);
-            synapse->spikes.initialize(size,0);
+    void setPoissonData(std::vector<real> data)
+    {
+        
+        Population* tp=nullptr;
+        for(auto &p:net->pops){
+            if(p->isSource){
+                tp=p;
+            }
         }
+        if(tp==nullptr)return;
+        for(int i=0;i<tp->neurons.size();i++){
+            (*net)[tp->neurons[i]].recv(data[i]);
+        }
+    }
+    void setFeeder(void (*_feeder)(int, InputBuffer &))
+    {
+        // feeder = _feeder;
+    }
+    void setMonitorNeuron(void (*_monitor)(int, Neuron&))
+    {
+        monitorn = _monitor;
+    }
+    void setMonitorSynapse(void (*_monitors)(int,Synapse&)){
+        monitors=_monitors;
+    }
+    void setMonitorPop(void (*_monitorp)(int,int,std::vector<Neuron*>)){
+        monitorp=_monitorp;
+    }
+    void simulate(real time)
+    {
         int steps = std::lrint(time / dt);
-        for (int i = 0; i < steps; i++) {
-            feeder(i, *inputs);
+        for (int i = 0; i < steps; i++)
+        {
+            // feeder(i, *inputs);
             simulate(i);
-            inputs->clear();
+            // inputs->clear();
         }
     }
-
-    void simulate(int step) {
-        //准备输入脉冲
-        for(int i=0;i<inputs->size(); i++){
-            net->source[i]->in=(*inputs)[i];
+private:
+    void simulate(int clock) 
+    {
+        // // 准备输入脉冲
+        // for (int i = 0; i < inputs->size(); i++)
+        // {
+        //     net->source[i]->recv((*inputs)[i]);
+        // }
+        // 仿真神经元
+        for(auto p:net->pops){
+            std::vector<Neuron*> ns;
+            for(auto i:p->neurons){
+                //更新神经元
+                (*net)[i].update(clock);
+                ns.push_back((*net).neurons[i]);
+                monitorn(clock,(*net)[i]);
+            }
+            monitorp(clock,p->id,ns);
+            for(auto i:p->neurons){
+                //清楚神经元的输入电流
+                (*net)[i].clear();
+            }
         }
-        //仿真神经元
-        for (auto & neuron : net->neurons) {
-            LIF(neuron->v, neuron->in, neuron->out, dt);
-            monitor(step,neuron->id,neuron->v,neuron->in,neuron->out);
-            neuron->in=0;
-        }
-        //仿真突触
-        for(auto & synapse : net->synapses){
-            int src=synapse->src;
-            int tar=synapse->tar;
-            real i=net->neurons[src]->out*synapse->weight;
-            real o=synapse->spikes.push(i);
-            net->neurons[tar]->in+=o;
+        // 仿真突触
+        for (auto synapse : net->synapses)
+        {
+            real o=synapse->update(*(net->neurons[synapse->src]),*(net->neurons[synapse->tar]));
+            monitors(clock,*synapse);
+            net->neurons[synapse->tar]->recv(o);
+            // net->neurons[synapse->tar]->addIn(o);
         }
         // std::cout<<net->neurons[4]->in<<std::endl;
     }
-
 };
 
-
-#endif //SIMPLECPUSIM_SIMULATOR_HPP
+#endif // SIMPLECPUSIM_SIMULATOR_HPP

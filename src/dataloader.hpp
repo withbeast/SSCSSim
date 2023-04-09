@@ -25,7 +25,7 @@ int ReverseInt(int i) {
     return ((int) ch1 << 24) + ((int) ch2 << 16) + ((int) ch3 << 8) + ch4;
 }
 
-void read_Mnist_Label(string filename, vector<double> &labels) {
+void read_Mnist_Label(string filename, vector<short> &labels) {
     ifstream file(filename, ios::binary);
     if (file.is_open()) {
         int magic_number = 0;
@@ -37,7 +37,7 @@ void read_Mnist_Label(string filename, vector<double> &labels) {
         for (int i = 0; i < number_of_images; i++) {
             unsigned char label = 0;
             file.read((char *) &label, sizeof(label));
-            labels.push_back((double) label);
+            labels.push_back((short) label);
         }
 
     }
@@ -75,8 +75,42 @@ void read_Mnist_Images(string filename, vector<vector<double>> &images) {
     }
 }
 
-vector<vector<int>> read_OnePic(string filename){
-    
+
+
+void read_images_poisson(string filename,vector<vector<real>>& images){
+    ifstream file(filename, ios::binary);
+    if (file.is_open()) {
+        int magic_number = 0;
+        int number_of_images = 0;
+        int n_rows = 0;
+        int n_cols = 0;
+        unsigned char label;
+        file.read((char *) &magic_number, sizeof(magic_number));
+        file.read((char *) &number_of_images, sizeof(number_of_images));
+        file.read((char *) &n_rows, sizeof(n_rows));
+        file.read((char *) &n_cols, sizeof(n_cols));
+        magic_number = ReverseInt(magic_number);
+        number_of_images = ReverseInt(number_of_images);
+        n_rows = ReverseInt(n_rows);
+        n_cols = ReverseInt(n_cols);
+
+
+        for (int i = 0; i < number_of_images; i++) {
+            vector<real> tp;
+            for (int r = 0; r < n_rows; r++) {
+                for (int c = 0; c < n_cols; c++) {
+                    unsigned char i = 0;
+                    file.read((char *) &i, sizeof(i));
+                    real pixel=(real)i/255.0f;
+                    tp.push_back(pixel);
+                }
+            }
+            images.push_back(tp);
+        }
+    }
+}
+
+void read_OnePic(string filename,vector<vector<int>>& image){
     ifstream file;
     file.open(filename,ios::in);
     if(file.is_open()){
@@ -93,7 +127,7 @@ vector<vector<int>> read_OnePic(string filename){
         num = ReverseInt(num);
         rows = ReverseInt(rows);
         cols = ReverseInt(cols);
-        vector<vector<int>> image(rows,vector<int>(cols));
+        image=vector<vector<int>> (rows,vector<int>(cols));
         for(int i=0;i<rows;i++){
             for(int j=0;j<cols;j++){
                 unsigned char c;
@@ -101,6 +135,37 @@ vector<vector<int>> read_OnePic(string filename){
                 image[i][j]=c;
             }
         }
-        return image;
     }
 }
+void read_onepic_poisson(string filename,vector<real>& image){
+    ifstream file;
+    file.open(filename,ios::in);
+    if(file.is_open()){
+        int magic = 0;
+        int num = 0;
+        int rows = 0;
+        int cols = 0;
+        unsigned char label;
+        file.read((char *) &magic, sizeof(int));
+        file.read((char *) &num, sizeof(int));
+        file.read((char *) &rows, sizeof(int));
+        file.read((char *) &cols, sizeof(int));
+        magic = ReverseInt(magic);
+        num = ReverseInt(num);
+        rows = ReverseInt(rows);
+        cols = ReverseInt(cols);
+        image=vector<real>(rows*cols);
+        for(int i=0;i<rows;i++){
+            for(int j=0;j<cols;j++){
+                unsigned char c;
+                file.read((char *) &c, sizeof(char));
+                real pixel=(real)c/255.0f;
+                image[i*cols+j]=pixel;
+            }
+        }
+    }
+}
+/**
+ * @brief 读取IRIS数据集
+ * 
+ */

@@ -6,11 +6,12 @@
 #define SIMPLECPUSIM_SPIKEGEN_HPP
 #include "macro.h"
 #include "network.hpp"
-#include <random>
+
 class SpikeGen {
 public:
     SpikeGen(){}
-    real random(){
+    real random0001()
+    {
         return rand() % (999 + 1) / (float)(999 + 1);
     }
     std::vector<input_spike> testGen(real step, int id, int start, int end, real exc){
@@ -27,10 +28,10 @@ public:
         std::vector<real> data_init(sourceNum);
         std::vector<std::vector<bool>> data(steps,std::vector<bool>(sourceNum));
         for(int i=0;i<sourceNum;i++)
-            data_init[i]=random();
+            data_init[i]=random0001();
         for(int i=0;i<steps;i++){
             for(int j=0;j<sourceNum;j++){
-                if(random()<data_init[j]){
+                if(random0001()<data_init[j]){
                     data[i][j]=true;
                 }else{
                     data[i][j]=false;
@@ -47,7 +48,7 @@ public:
             data_init[i]=(float)_image[i]/255.0f;
         for(int i=0;i<steps;i++){
             for(int j=0;j<n;j++){
-                if(random()<data_init[j]){
+                if(random0001()<data_init[j]){
                     data[i][j]=true;
                 }else{
                     data[i][j]=false;
@@ -56,6 +57,14 @@ public:
         }
         return data;
     }
+    std::vector<real> genRandPoissonRateData(int num){
+        std::vector<real> res(num);
+        for(int i=0;i<num;i++){
+            res[i]=random0001();
+        }
+        return res;
+    }
+    
 };
 
 

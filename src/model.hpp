@@ -10,39 +10,41 @@ struct Population{
     int id;
     int num;
     bool isSource;
+    NeuronType type;
     std::vector<int> neurons;
 };
 struct Projection{
     int src;
     int tar;
-    real weight;
-    real delay;
+    std::array<real,2> wrange;
+    std::array<real,2> drange;
     float type;
 
 };
 
-class model {
+class Model {
 public:
     std::vector<Population*> pops;
     std::vector<Projection*> pros;
     int indexer;
-    model(){
+    Model(){
         indexer=0;
     }
-    Population& createPop(int num,bool isSource=false){
+    Population& createPop(int num,NeuronType type,bool isSource=false){
         Population *p=new Population();
         p->num=num;
         p->id=indexer++;
         p->isSource=isSource;
+        p->type=type;
         pops.push_back(p);
         return *p;
     }
-    bool connect(Population& src, Population tar, real weight, real delay, float type){
+    bool connect(Population& src, Population tar, std::array<real,2> _wrange, std::array<real,2> _drange, float type){
         Projection* p=new Projection();
         p->src=src.id;
         p->tar=tar.id;
-        p->weight=weight;
-        p->delay=delay;
+        p->wrange=_wrange;
+        p->drange=_drange;
         p->type=type;
         if(type==0.0&&src.num!=tar.num)return false;
         int index=-1;
@@ -52,8 +54,8 @@ public:
             }
         }
         if(index>0){//覆盖
-            pros[index]->delay=delay;
-            pros[index]->weight=weight;
+            pros[index]->wrange=_wrange;
+            pros[index]->drange=_drange;
             pros[index]->type=type;
         }else{
             pros.push_back(p);
