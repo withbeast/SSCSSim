@@ -9,7 +9,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
-
+#include "macro.h"
 using namespace std;
 /**
  * 读取MNIST数据集
