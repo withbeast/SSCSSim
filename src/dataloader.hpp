@@ -1,3 +1,10 @@
+//
+// Created by 15838 on 2023/3/13.
+//
+
+#ifndef SSCSSIM_DATALOADER_HPP
+#define SSCSSIM_DATALOADER_HPP
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -8,10 +15,10 @@ using namespace std;
  * 读取MNIST数据集
  * 分为四个文件
  * train-images、train-lables、t10k-images、t10k-labels
- * 
+ *
  * images文件的前四个int值为magic（魔数）、numbers（图片数量）、rows（图片的行数）、cols（图片的列数）
  * images文件的后续为unsigned byte流，按照行优先读取，每个byte值为像素点的灰度值（0-255）
- * 
+ *
  * labels文件的前两个int值为magic（魔数）、numbers（标签数量）
  * labels文件的后续为unsigned byte流，每个byte表示对应图片的分类结果（0-9）
  */
