@@ -211,7 +211,6 @@ private:
     real Vm;
     /// @brief 不应期状态值
     int refrac_state;
-    using Neuron::Neuron;
 
 public:
     LIFNeuron2(int id, bool isSource) : RecordNeuron(id, isSource, NeuronType::LIF2)

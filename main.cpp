@@ -18,9 +18,9 @@ void startSim(){
     Population& p1=model.createPop(4,NeuronType::LIF, true);
     Population& p2=model.createPop(4,NeuronType::LIF);
     Population& p3=model.createPop(4,NeuronType::LIF);
-    model.connect(p1,p2,1,0.002,1);
-    model.connect(p1,p3,1.0,0.003,1);
-    model.connect(p2,p3,1,0.003,1);
+    model.connect(p1,p2,{1,1},{0.002,0.002},1);
+    model.connect(p1,p3,{1,1},{0.003,0.003},1);
+    model.connect(p2,p3,{1,1},{0.003,0.003},1);
     NetGen netgen;
     Network net=netgen.genNet(&model);
     SpikeGen sgen;
@@ -30,8 +30,8 @@ void startSim(){
     sim.setMonitorNeuron([](int step,Neuron& n){
         LIFNeuron& ln= *dynamic_cast<LIFNeuron*>(&n);
         if(n.getId()==0){
-            outputsu.push_back(ln.getV());
-            outputsi.push_back(ln.getIn());
+            outputsu.push_back(ln.getvm());
+            outputsi.push_back(ln.getin());
             outputso.push_back(ln.isFired());
         }
     });

@@ -102,8 +102,8 @@ struct synapse_data{
     real delay;
 };
 
-void save_network(string filename,Network& net){
-    ofstream ofile(filename,std::ios::out|std::ios::binary);
+void save_network(std::string filename,Network& net){
+    std::ofstream ofile(filename,std::ios::out|std::ios::binary);
     if(ofile.is_open()){
         //写族群
         int psize=net.pops.size();
@@ -138,6 +138,6 @@ void save_network(string filename,Network& net){
     ofile.close();
 };
 
-void load_network(string filename,Network& net){};
+void load_network(std::string filename,Network& net){};
 
 #endif // SIMPLECPUSIM_NETWORK_HPP

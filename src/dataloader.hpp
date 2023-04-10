@@ -2,8 +2,7 @@
 // Created by 15838 on 2023/3/13.
 //
 
-#ifndef SSCSSIM_DATALOADER_HPP
-#define SSCSSIM_DATALOADER_HPP
+
 
 #include <iostream>
 #include <fstream>
