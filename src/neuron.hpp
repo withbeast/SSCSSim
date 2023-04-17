@@ -87,21 +87,29 @@ public:
     }
     virtual real getin()
     {
-        return rate;
+        return 0;
     }
     virtual real getvm()
     {
-        return rate;
+        return fired;
     }
     virtual void update(int clock)
     {
         fired = poissonRand() < rate;
+        if (fired)
+        {
+            last_fired = clock;
+        }
     }
 };
 
 class LIFNeuron : public RecordNeuron
 {
-
+    const real R = 5.1;
+    const real C = 5e-3;
+    const real thresh = 0.5;
+    const int refrac_period = 10;
+    const real V_reset = 0;
     /// @brief 输入电流
     real I;
     /// @brief 神经元膜电位
@@ -130,17 +138,10 @@ public:
     }
     virtual void update(int clock)
     {
-        const real R = 5.1;
-        const real C = 5e-3;
-        const real thresh = 0.5;
-        const int refrac_period = 10;
-        const real V_reset = 0;
-
+        fired = false;
         if (refrac_state > 0)
         {
             refrac_state--;
-            V = V_reset;
-            fired = false;
         }
         else
         {
@@ -150,31 +151,33 @@ public:
             {
                 refrac_state = refrac_period;
                 last_fired = clock;
+                V = V_reset;
             }
             V += (Config::STEP / tau) * (I * R - V) - (int)fired * thresh;
         }
     }
 };
 
-struct LIF2Consts
+struct LIF2Constants
 {
-    /// @brief Resting membrane potential 静息膜电位
+
+    /// @brief Resting membrane potential 静息膜电位 mV
     real V_rest;
-    /// @brief Reset membrane potential 重置膜电位
+    /// @brief Reset membrane potential 重置膜电位 mV
     real V_reset;
-    /// @brief Membrane capacitance 膜电容
+    /// @brief Membrane capacitance 膜电容 nF
     real C_m;
-    /// @brief Membrane time constant 膜时间常数
+    /// @brief Membrane time constant 膜时间常数 ms
     real Tau_m;
-    /// @brief Refractory period 不应期
+    /// @brief Refractory period 不应期 ms
     real Refrac_period;
-    /// @brief Excitatory synaptic time constant 兴奋性突触时间常数
+    /// @brief Excitatory synaptic time constant 兴奋性突触时间常数 ms
     real Tau_exc;
-    /// @brief Inhibitory synaptic time constant 抑制性突触时间常数
+    /// @brief Inhibitory synaptic time constant 抑制性突触时间常数 ms
     real Tau_inh;
-    /// @brief Spike threshold 脉冲阈值
+    /// @brief Spike threshold 脉冲阈值 mV
     real V_thresh;
-    /// @brief Injected current amplitude 注入电流幅值
+    /// @brief Injected current amplitude 注入电流幅值 nA
     real I_offset;
 
     /// 中间参数
@@ -183,22 +186,48 @@ struct LIF2Consts
     real _P21inh;
     real _P11exc;
     real _P11inh;
-    
+    /// @brief 不应期时间片数
+    int Refrac_step;
+
     void init()
     {
-        V_reset=0;
-        _P22 = std::exp(-Config::DT / Tau_m);
-        _P11exc = std::exp(-Config::DT / Tau_exc);
-        _P11inh = std::exp(-Config::DT / Tau_inh);
-        _P21exc = Tau_m * Tau_exc / (C_m * (Tau_exc - Tau_m));
-        _P21inh = Tau_m * Tau_inh / (C_m * (Tau_inh - Tau_m));
+        //   : Tau_( 10.0 )             // in ms
+        //   , C_( 250.0 )              // in pF
+        //   , t_ref_( 2.0 )            // in ms
+        //   , E_L_( -70.0 )            // in mV
+        //   , I_e_( 0.0 )              // in pA
+        //   , Theta_( -55.0 - E_L_ )   // relative E_L_
+        //   , V_reset_( -70.0 - E_L_ ) // in mV
+        //   , tau_ex_( 2.0 )           // in ms
+        //   , tau_in_( 2.0 )           // in ms
+        //   , rho_( 0.01 )             // in 1/s
+        //   , delta_( 0.0 )            // in mV
+        V_rest = 0;          // mV
+        V_reset = 0;         // mV
+        C_m = 0.25;          // nF
+        Tau_m = 10.0;        // ms
+        Refrac_period = 4.0; // ms
+        Tau_exc = 20;        // ms;
+        Tau_inh = 30;        // ms
+        V_thresh = 15;       // mV
+        I_offset = 0;        // nA
+
+        /// 中间参数
+        real dt = Config::DT; // ms
+        Refrac_step = Refrac_period / dt;
+        _P22 = std::exp(-dt / Tau_m);
+        _P11exc = std::exp(-dt / Tau_exc);
+        _P11inh = std::exp(-dt / Tau_inh);
+        _P21exc = Tau_m * Tau_exc / (C_m * 1000 * (Tau_exc - Tau_m));
+        _P21inh = Tau_m * Tau_inh / (C_m * 1000 * (Tau_inh - Tau_m));
+        std::cout << _P22 << std::endl;
     }
 };
 
 class LIFNeuron2 : public RecordNeuron
 {
 public:
-    LIF2Consts* Consts;
+    LIF2Constants *Consts;
 
 private:
     /// @brief 突触输入电流
@@ -216,7 +245,13 @@ public:
     LIFNeuron2(int id, bool isSource) : RecordNeuron(id, isSource, NeuronType::LIF2)
     {
         Vm = 0;
-        Consts=new LIF2Consts();
+        I_syn_exc = 0;
+        I_syn_inh = 0;
+        I_exc = 0;
+        I_inh = 0;
+        Consts = new LIF2Constants();
+        Consts->init();
+        refrac_state = 0;
     }
     virtual real getvm() { return Vm; }
     virtual real getin() { return I_syn_exc + I_syn_inh; }
@@ -242,6 +277,7 @@ public:
     }
     virtual void update(int clock)
     {
+        fired = false;
         if (refrac_state > 0)
         {
             --refrac_state;
@@ -257,7 +293,7 @@ public:
                 fired = true;
                 firecnt++;
                 Vm = Consts->V_reset;
-                refrac_state = Consts->Refrac_period;
+                refrac_state = Consts->Refrac_step;
             }
             else
             {

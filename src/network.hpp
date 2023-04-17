@@ -64,7 +64,7 @@ public:
     }
     void pushSynapse(int src, int tar, real weight, real delay)
     {
-        auto *syn = new STDPSynapse();
+        auto *syn = new Synapse();
         syn->tar = tar;
         syn->src = src;
         syn->weight = weight;

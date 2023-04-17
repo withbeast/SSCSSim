@@ -13,6 +13,7 @@ public:
 
     static real randweight(real floor,real ceil){
         if(ceil==floor)return floor;
+        
         int range=(int)((ceil-floor)/Config::DW) + 1;
         real tw;
         if(floor<0)

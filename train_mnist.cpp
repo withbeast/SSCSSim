@@ -35,7 +35,6 @@ void print_label(vector<short>& label){
 void startSim(){
     Config::setDW(0.01);
     Config::setTimestep(0.001);
-    Config::setTimes(0.1);
     Model model;
     Population& Xe=model.createPop(784,NeuronType::POISSON, true);
     Population& Ae=model.createPop(400,NeuronType::LIF);
@@ -68,7 +67,7 @@ void startSim(){
     for(int i=0;i<100;i++){
         cout<<"====="<<"image:"<<i<<"======"<<endl;
         sim.setPoissonData(train_images[i]);
-        sim.simulate(Config::TIME);
+        sim.simulate(200.0f);
     }
     
     // for(int i=0;i<cur_spikes.size();i++){

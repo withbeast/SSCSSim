@@ -1,9 +1,9 @@
-import snntorch as snn
-from snntorch import spikeplot as splt
-from snntorch import spikegen
+# import snntorch as snn
+# from snntorch import spikeplot as splt
+# from snntorch import spikegen
 import numpy as np
-import torch
-import torch.nn as nn
+# import torch
+# import torch.nn as nn
 import matplotlib.pyplot as plt
 x=[1,5,7,8,10]
 y=[0,0,0,0,0]
