@@ -27,7 +27,7 @@ public:
         // 初始化突触脉冲缓冲池
         for (auto &synapse : net->synapses)
         {
-            int size = std::lrint(synapse->delay*1000 / dt);
+            int size = std::lrint(synapse->delay / dt);
             synapse->spikes.initialize(size, 0);
         }
         

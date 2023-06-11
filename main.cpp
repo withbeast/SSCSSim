@@ -14,26 +14,31 @@ std::vector<real> outputso;
 std::vector<real> poissono;
 std::vector<std::vector<bool>> inputPoisson;
 void startSim(){
-    Config::setTimestep(1);
+    Config::setTimestep(0.001);
+    srand(time(0));
     Model model;
-    Population& p1=model.createPop(4,NeuronType::POISSON, true);
-    Population& p2=model.createPop(4,NeuronType::LIF2);
-    Population& p3=model.createPop(4,NeuronType::LIF2);
+    Population& p1=model.createPop(1,NeuronType::POISSON, true);
+    Population& p2=model.createPop(1,NeuronType::LIF);
+    Population& p3=model.createPop(4,NeuronType::LIF);
     model.connect(p1,p2,{1,1},{0.002,0.002},TYPE_FULL);
-    model.connect(p1,p3,{1,1},{0.003,0.003},TYPE_FULL);
-    model.connect(p2,p3,{1,1},{0.003,0.003},TYPE_FULL);
+    model.connect(p1,p3,{1,1},{0.002,0.002},TYPE_FULL);
+    model.connect(p2,p3,{1,1},{0.002,0.002},TYPE_FULL);
     NetGen netgen;
     Network net=netgen.genNet(&model);
     SpikeGen sgen;
     Simulator sim(&net);
     vector<real> randData=sgen.genRandPoissonRateData(4);
-    sim.setPoissonData(randData);
+    vector<real> data={0.5};
+    sim.setPoissonData(data);
     sim.setMonitorNeuron([](int step,Neuron& n){
         Neuron& ln= *dynamic_cast<Neuron*>(&n);
         if(n.getId()==0){
             poissono.push_back(ln.isFired());
+            // if(ln.isFired()){
+            //     std::cout<<"hello"<<std::endl;
+            // }
         }
-        if(n.getId()==5){
+        if(n.getId()==1){
             outputsu.push_back(ln.getvm());
             outputsi.push_back(ln.getin());
             outputso.push_back(ln.isFired());
@@ -47,7 +52,7 @@ void startSim(){
         // }
     });
 
-    sim.simulate(200.0f);
+    sim.simulate(0.05f);
     store(outputsu,"../analysis/u.txt");
     store(outputsi,"../analysis/i.txt");
     store(outputso,"../analysis/o.txt");

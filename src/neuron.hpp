@@ -105,10 +105,15 @@ public:
 
 class LIFNeuron : public RecordNeuron
 {
-    const real R = 5.1;
+    // const real R = 5.1;
+    // const real C = 5e-3;
+    // const real thresh = 0.5;
+    // const int refrac_period = 10;
+    // const real V_reset = 0;
+    const real R = 0.8;
     const real C = 5e-3;
     const real thresh = 0.5;
-    const int refrac_period = 10;
+    const int refrac_period = 5;
     const real V_reset = 0;
     /// @brief 输入电流
     real I;
@@ -142,18 +147,19 @@ public:
         if (refrac_state > 0)
         {
             refrac_state--;
+            V=V_reset;
         }
         else
         {
             real tau = R * C;
+            V += (Config::DT / tau) * (I * R - V) - (int)fired * thresh;
             fired = (V > thresh);
             if (fired)
             {
                 refrac_state = refrac_period;
-                last_fired = clock;
-                V = V_reset;
+                // last_fired = clock;
+                // V = V_reset;
             }
-            V += (Config::STEP / tau) * (I * R - V) - (int)fired * thresh;
         }
     }
 };
@@ -209,7 +215,7 @@ struct LIF2Constants
         Refrac_period = 4.0; // ms
         Tau_exc = 20;        // ms;
         Tau_inh = 30;        // ms
-        V_thresh = 15;       // mV
+        V_thresh = 5;       // mV
         I_offset = 0;        // nA
 
         /// 中间参数
