@@ -30,6 +30,10 @@ enum NeuronType
     POISSON,
     LIF2
 };
+enum SynapseType{
+    Normal,
+    STDP
+};
 
 class SpikePipe
 {

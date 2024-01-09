@@ -19,6 +19,7 @@ struct Projection{
     std::array<real,2> wrange;
     std::array<real,2> drange;
     float type;
+    SynapseType stype;
 
 };
 
@@ -40,12 +41,16 @@ public:
         return *p;
     }
     bool connect(Population& src, Population tar, std::array<real,2> _wrange, std::array<real,2> _drange, float type){
+        connect(src,tar,_wrange,_drange,type,SynapseType::Normal);
+    }
+    bool connect(Population& src, Population tar, std::array<real,2> _wrange, std::array<real,2> _drange, float type,SynapseType stype){
         Projection* p=new Projection();
         p->src=src.id;
         p->tar=tar.id;
         p->wrange=_wrange;
         p->drange=_drange;
         p->type=type;
+        p->stype=stype;
         if(type==0.0&&src.num!=tar.num)return false;
         int index=-1;
         for(int i=0;i<pros.size();i++){

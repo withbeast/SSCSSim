@@ -44,6 +44,7 @@ public:
             int tar=model->pros[i]->tar;
             int sn=model->pops[src]->num;
             int tn=model->pops[tar]->num;
+            SynapseType stype=model->pros[i]->stype;
             real minw=model->pros[i]->wrange[0];
             real maxw=model->pros[i]->wrange[1];
             real mind=model->pros[i]->drange[0];
@@ -51,13 +52,13 @@ public:
             if(model->pros[i]->type==1.0){
                 for(int m=0;m<sn;m++){
                     for(int n=0;n<tn;n++){
-                        net->pushSynapse(model->pops[src]->neurons[m],model->pops[tar]->neurons[n],randweight(minw,maxw),randdelay(mind,maxd));
+                        net->pushSynapse(stype,model->pops[src]->neurons[m],model->pops[tar]->neurons[n],randweight(minw,maxw),randdelay(mind,maxd));
                     }
                 }
             }
             else if(model->pros[i]->type==0.0){
                 for(int k=0;k<sn;k++){
-                    net->pushSynapse(model->pops[src]->neurons[k],model->pops[tar]->neurons[k],randweight(minw,maxw),randdelay(mind,maxd));
+                    net->pushSynapse(stype,model->pops[src]->neurons[k],model->pops[tar]->neurons[k],randweight(minw,maxw),randdelay(mind,maxd));
                 }
             }else if(model->pros[i]->type<1.0&&model->pros[i]->type>0.0){
                 std::vector<bool> genlist(sn*tn);
@@ -72,7 +73,7 @@ public:
                 for(int m=0;m<sn;m++){
                     for(int n=0;n<tn;n++){
                         if(genlist[m*tn+n])
-                            net->pushSynapse(model->pops[src]->neurons[m],model->pops[tar]->neurons[n],randweight(minw,maxw),randdelay(mind,maxd));
+                            net->pushSynapse(stype,model->pops[src]->neurons[m],model->pops[tar]->neurons[n],randweight(minw,maxw),randdelay(mind,maxd));
                     }
                 }
             }

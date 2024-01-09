@@ -66,6 +66,13 @@ short get_recognized_number_ranking(vector<short>& assignments,vector<int>& cur_
     return max_rank;
 }
 
+void get_slice(vector<short>& all,vector<short>& slice,int index,int slice_num){
+    slice.resize(slice_num);
+    for(int i=index,idx=0;i<(index+slice_num)&&i<all.size();i++){
+        slice[idx++]=all[i];
+    }
+}
+
 
 void print_image(vector<int>& image){
     for(int i=0;i<28;i++){
@@ -83,34 +90,21 @@ void print_label(vector<short>& label){
     cout<<endl;
 }
 
-void monitor(int clock,int popid,vector<Neuron*> ns){
-
-}
-
-void startSim(){
+void start_sim(){
     Config::setDW(0.01);
     Config::setTimestep(0.001);
     Model model;
     Population& Xe=model.createPop(784,NeuronType::POISSON, true);
     Population& Ae=model.createPop(400,NeuronType::LIF);
     Population& Ai=model.createPop(400,NeuronType::LIF);
-    model.connect(Xe,Ae,{1,1},{0.003,0.01},1);
-    model.connect(Ae,Ai,{1,1},{0.003,0.01},0);
-    model.connect(Ai,Ae,{-1,-1},{0.003,0.01},1);
+    model.connect(Xe,Ae,{1,1},{0.003,0.01},1,SynapseType::STDP);
+    model.connect(Ae,Ai,{1,1},{0.003,0.01},0,SynapseType::STDP);
+    model.connect(Ai,Ae,{-1,-1},{0.003,0.01},1,SynapseType::STDP);
     Network net=NetGen::genNet(&model);
     Simulator sim(&net);
-
-    real single_time=0.35;
-
-    /**
-     * 训练网络
-    */
-    vector<vector<real>> train_images;
-    read_images_poisson("../mnist/train-images.idx3-ubyte",train_images);
-    vector<short> train_labels;
-    read_Mnist_Label("../mnist/train-labels.idx1-ubyte",train_labels);
     tid=Ae.id;
-    cur_spikes=vector<int>(400,0);
+    int AeSize=400;
+    cur_spikes.resize(AeSize);
     sim.setMonitorPop([](int clock,int popid,vector<Neuron*>ns){
         if(popid==tid){
             for(int i=0;i<ns.size();i++){
@@ -118,45 +112,66 @@ void startSim(){
             }
         }
     });
-    int train_num=train_images.size();
-    int train_slice=10000;
-    vector<short> assignments(400);
-    
-    for(int i=0;i<train_num;i++){
-        if(i%train_slice==0){
-            get_new_assignments(spike_counts,train_labels,assignments);
+    vector<short> assignments(AeSize);
+    real single_time=0.35;
+    bool train=true;
+    if(train){
+        /**
+        * 训练网络
+        */
+        vector<vector<real>> train_images;
+        read_images_poisson("../mnist/train-images.idx3-ubyte",train_images);
+        vector<short> train_labels;
+        read_Mnist_Label("../mnist/train-labels.idx1-ubyte",train_labels);
+        
+        int train_num=2;
+        int train_slice=2;
+        int bench_size=train_num/train_slice;
+        spike_counts=vector<vector<int>>(train_slice);
+        for(int bench=0;bench<bench_size;bench++){
+            for(int i=0;i<train_slice;i++){
+                int idx=bench*train_slice+i;
+                sim.setPoissonData(train_images[idx]);
+                sim.simulate(single_time);
+                spike_counts[i]=vector<int>(cur_spikes);
+                cur_spikes=vector<int>(400,0);
+                cout<<"===== train "<<"image : "<<idx<<" ======"<<endl;
+            }
+            vector<short> labels_slice;
+            get_slice(train_labels,labels_slice,bench*train_slice,train_slice);
+            get_new_assignments(spike_counts,labels_slice,assignments);
             spike_counts=vector<vector<int>>(train_slice);
         }
-        cout<<"====="<<"image:"<<i<<"======"<<endl;
-        sim.setPoissonData(train_images[i]);
-        sim.simulate(single_time);
-        spike_counts[i]=vector<int>(cur_spikes);
-        cur_spikes=vector<int>(400,0);
+        
     }
     
-    
-    /**
-     * 测试网络
-    */
-    vector<vector<real>> test_images;
-    read_images_poisson("../mnist/t10k-images.idx3-ubyte",test_images);
-    vector<short> test_labels;
-    read_Mnist_Label("../mnist/t10k-labels.idx1-ubyte",test_labels);
-    int test_num=10000;
-    int right=0;
-    for(int i=0;i<test_num;i++){
-        sim.setPoissonData(test_images[i]);
-        sim.simulate(single_time);
-        short label=get_recognized_number_ranking(assignments,cur_spikes);
-        if(label==test_labels[i]){
-            right++;
+    bool test=true;
+    if(test){
+        /**
+         * 测试网络
+        */
+        vector<vector<real>> test_images;
+        read_images_poisson("../mnist/t10k-images.idx3-ubyte",test_images);
+        vector<short> test_labels;
+        read_Mnist_Label("../mnist/t10k-labels.idx1-ubyte",test_labels);
+        int test_num=2;
+        int right=0;
+        for(int i=0;i<test_num;i++){
+            sim.setPoissonData(test_images[i]);
+            sim.simulate(single_time);
+            short label=get_recognized_number_ranking(assignments,cur_spikes);
+            if(label==test_labels[i]){
+                right++;
+            }
+            cur_spikes=vector<int>(400,0);
+            cout<<"===== test "<<"image : "<<i<<" ======"<<endl;
         }
+        real rate=(double)right/test_num;
+        std::cout<<"rate: "<<rate<<std::endl;
     }
-    real rate=(double)right/test_num;
-    std::cout<<"rate: "<<rate<<std::endl;
 }
 int main() {
-    startSim();
+    start_sim();
 
     
     return 0;

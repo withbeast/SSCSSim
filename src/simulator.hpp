@@ -106,9 +106,7 @@ private:
             real o=synapse->update(*(net->neurons[synapse->src]),*(net->neurons[synapse->tar]));
             monitors(clock,*synapse);
             net->neurons[synapse->tar]->recv(o);
-            // net->neurons[synapse->tar]->addIn(o);
         }
-        // std::cout<<net->neurons[4]->in<<std::endl;
     }
 };
 

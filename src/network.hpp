@@ -29,6 +29,21 @@ Neuron* createN(NeuronType type,int id,bool isSource){
     }
     return n;
 }
+Synapse* createS(SynapseType type){
+    Synapse* s;
+    switch (type)
+    {
+    case SynapseType::Normal:
+        s=new Synapse();
+        break;
+    case SynapseType::STDP:
+        s=new STDPSynapse();
+        break;
+    default:
+        s=nullptr;
+        break;
+    }
+}
 
 class Network
 {
@@ -62,9 +77,9 @@ public:
         neurons.push_back(n);
         return n->getId();
     }
-    void pushSynapse(int src, int tar, real weight, real delay)
+    void pushSynapse(SynapseType type,int src, int tar, real weight, real delay)
     {
-        auto *syn = new Synapse();
+        auto *syn = createS(type);
         syn->tar = tar;
         syn->src = src;
         syn->weight = weight;
